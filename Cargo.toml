@@ -1,0 +1,8 @@
+[package]
+name = "pathfinder"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.22"
+eframe = "0.22"
