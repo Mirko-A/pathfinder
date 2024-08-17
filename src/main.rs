@@ -22,13 +22,20 @@ enum SquareState {
     End,
 }
 
-impl SquareState {
-    fn to_color(state: &SquareState, colorscheme: &Colorscheme) -> egui::Color32 {
+const EMPTY_SQUARE_COLOR: egui::Color32 = egui::Color32::WHITE;
+const BLOCKED_SQUARE_COLOR: egui::Color32 = egui::Color32::BLACK;
+const START_SQUARE_COLOR: egui::Color32 = egui::Color32::GREEN;
+const END_SQUARE_COLOR: egui::Color32 = egui::Color32::RED;
+const SELECTED_SQUARE_COLOR: egui::Color32 = egui::Color32::DARK_BLUE;
+const GRID_LINE_COLOR: egui::Color32 = egui::Color32::BLACK;
+
+impl From<&SquareState> for egui::Color32 {
+    fn from(state: &SquareState) -> egui::Color32 {
         match state {
-            SquareState::Empty => colorscheme.empty_square,
-            SquareState::Blocked => colorscheme.blocked_square,
-            SquareState::Start => colorscheme.start_square,
-            SquareState::End => colorscheme.end_square,
+            SquareState::Empty => EMPTY_SQUARE_COLOR,
+            SquareState::Blocked => BLOCKED_SQUARE_COLOR,
+            SquareState::Start => START_SQUARE_COLOR,
+            SquareState::End => END_SQUARE_COLOR,
         }
     }
 }
@@ -84,31 +91,8 @@ impl Default for WindowProps {
     }
 }
 
-struct Colorscheme {
-    empty_square: egui::Color32,
-    blocked_square: egui::Color32,
-    start_square: egui::Color32,
-    end_square: egui::Color32,
-    selected_square: egui::Color32,
-    grid_line: egui::Color32,
-}
-
-impl Default for Colorscheme {
-    fn default() -> Self {
-        Self {
-            empty_square: egui::Color32::WHITE,
-            blocked_square: egui::Color32::BLACK,
-            start_square: egui::Color32::GREEN,
-            end_square: egui::Color32::RED,
-            selected_square: egui::Color32::DARK_BLUE,
-            grid_line: egui::Color32::BLACK,
-        }
-    }
-}
-
 struct Pathfinder {
     win_props: WindowProps,
-    colorscheme: Colorscheme,
     selected_square: (usize, usize),
     grid: Grid,
 }
@@ -123,12 +107,14 @@ impl Default for Pathfinder {
                 width: (grid.cols * grid.square_size) as f32,
                 height: (grid.rows * grid.square_size) as f32,
             },
-            colorscheme: Colorscheme::default(),
             selected_square: (0, 0),
             grid,
         }
     }
 }
+
+const SELECTED_SQUARE_WIDTH: f32 = 3.0;
+const GRID_LINE_WIDTH: f32 = 1.0;
 
 impl Pathfinder {
     fn update_state(&mut self, ctx: &egui::Context) {
@@ -170,19 +156,7 @@ impl Pathfinder {
 
     fn draw(&self, painter: &egui::Painter) {
         self.draw_grid(painter);
-
-        let tl = egui::pos2(
-            (self.selected_square.0 * self.grid.square_size) as f32,
-            (self.selected_square.1 * self.grid.square_size) as f32,
-        );
-        let size = egui::vec2(self.grid.square_size as f32, self.grid.square_size as f32);
-        let select_rect = egui::Rect::from_min_size(tl, size);
-        painter.rect(
-            select_rect,
-            0.0,
-            egui::Color32::TRANSPARENT,
-            egui::Stroke::new(3.0, self.colorscheme.selected_square),
-        );
+        self.draw_selected_square(painter);
     }
 
     fn draw_grid(&self, painter: &egui::Painter) {
@@ -190,7 +164,7 @@ impl Pathfinder {
         for i in 0..self.grid.rows {
             for j in 0..self.grid.cols {
                 let square = &self.grid.squares[i * self.grid.cols + j];
-                let color = SquareState::to_color(square, &self.colorscheme);
+                let color: egui::Color32 = square.into();
 
                 let rect = egui::Rect::from_min_max(
                     egui::pos2(
@@ -215,7 +189,7 @@ impl Pathfinder {
             let end = egui::pos2(self.grid.cols as f32 * self.grid.square_size as f32, y);
             painter.line_segment(
                 [start, end],
-                egui::Stroke::new(1.0, self.colorscheme.grid_line),
+                egui::Stroke::new(GRID_LINE_WIDTH, GRID_LINE_COLOR),
             );
         }
         // Vertical
@@ -225,9 +199,24 @@ impl Pathfinder {
             let end = egui::pos2(x, self.grid.rows as f32 * self.grid.square_size as f32);
             painter.line_segment(
                 [start, end],
-                egui::Stroke::new(1.0, self.colorscheme.grid_line),
+                egui::Stroke::new(GRID_LINE_WIDTH, GRID_LINE_COLOR),
             );
         }
+    }
+
+    fn draw_selected_square(&self, painter: &egui::Painter) {
+        let min = egui::pos2(
+            (self.selected_square.0 * self.grid.square_size) as f32,
+            (self.selected_square.1 * self.grid.square_size) as f32,
+        );
+        let size = egui::vec2(self.grid.square_size as f32, self.grid.square_size as f32);
+        let select_rect = egui::Rect::from_min_size(min, size);
+        painter.rect(
+            select_rect,
+            0.0,
+            egui::Color32::TRANSPARENT,
+            egui::Stroke::new(SELECTED_SQUARE_WIDTH, SELECTED_SQUARE_COLOR),
+        );
     }
 }
 
