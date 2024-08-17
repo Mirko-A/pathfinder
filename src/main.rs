@@ -108,7 +108,7 @@ struct Pathfinder {
     grid_area: egui::Rect,
     status_area: egui::Rect,
     selected_square: (usize, usize),
-    placing_square: SquareState,
+    placing_square: Option<SquareState>,
     start_square: Option<(usize, usize)>,
     end_square: Option<(usize, usize)>,
     grid: Grid,
@@ -141,7 +141,7 @@ impl Default for Pathfinder {
             grid_area,
             status_area,
             selected_square: (0, 0),
-            placing_square: SquareState::Empty,
+            placing_square: None,
             start_square: None,
             end_square: None,
             grid,
@@ -156,7 +156,7 @@ impl Pathfinder {
     fn update_state(&mut self, ctx: &egui::Context) {
         self.update_selected_square(ctx);
         self.update_grid(ctx);
-        self.update_gm_mode(ctx);
+        self.update_placing_square(ctx);
     }
 
     fn update_selected_square(&mut self, ctx: &egui::Context) {
@@ -179,58 +179,64 @@ impl Pathfinder {
     fn update_grid(&mut self, ctx: &egui::Context) {
         let idx = self.selected_square.1 * self.grid.cols + self.selected_square.0;
         match self.placing_square {
-            SquareState::Empty | SquareState::Blocked => {
-                if let Some(pos) = self.start_square {
-                    if pos == self.selected_square {
-                        self.start_square = None;
-                    }
-                }
-                if let Some(pos) = self.end_square {
-                    if pos == self.selected_square {
-                        self.end_square = None;
-                    }
-                }
-
-                if self.placing_square == SquareState::Empty {
-                    self.grid.squares[idx] = SquareState::Empty;
-                } else {
-                    self.grid.squares[idx] = SquareState::Blocked;
-                }
-            }
-            SquareState::Start => {
-                if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+            None => {}
+            Some(ref placing_square) => match placing_square {
+                SquareState::Empty | SquareState::Blocked => {
                     if let Some(pos) = self.start_square {
-                        self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                        if pos == self.selected_square {
+                            self.start_square = None;
+                        }
                     }
-                    self.start_square = Some(self.selected_square);
-                    self.grid.squares[idx] = SquareState::Start;
-                }
-            }
-            SquareState::End => {
-                if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                     if let Some(pos) = self.end_square {
-                        self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                        if pos == self.selected_square {
+                            self.end_square = None;
+                        }
                     }
-                    self.end_square = Some(self.selected_square);
-                    self.grid.squares[idx] = SquareState::End;
+
+                    if *placing_square == SquareState::Empty {
+                        self.grid.squares[idx] = SquareState::Empty;
+                    } else {
+                        self.grid.squares[idx] = SquareState::Blocked;
+                    }
                 }
-            }
+                SquareState::Start => {
+                    if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        if let Some(pos) = self.start_square {
+                            self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                        }
+                        self.start_square = Some(self.selected_square);
+                        self.grid.squares[idx] = SquareState::Start;
+                    }
+                }
+                SquareState::End => {
+                    if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        if let Some(pos) = self.end_square {
+                            self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                        }
+                        self.end_square = Some(self.selected_square);
+                        self.grid.squares[idx] = SquareState::End;
+                    }
+                }
+            },
         }
     }
 
-    fn update_gm_mode(&mut self, ctx: &egui::Context) {
+    fn update_placing_square(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             if i.key_pressed(egui::Key::Num1) {
-                self.placing_square = SquareState::Empty;
+                self.placing_square = Some(SquareState::Empty);
             }
             if i.key_pressed(egui::Key::Num2) {
-                self.placing_square = SquareState::Blocked;
+                self.placing_square = Some(SquareState::Blocked);
             }
             if i.key_pressed(egui::Key::Num3) {
-                self.placing_square = SquareState::Start;
+                self.placing_square = Some(SquareState::Start);
             }
             if i.key_pressed(egui::Key::Num4) {
-                self.placing_square = SquareState::End;
+                self.placing_square = Some(SquareState::End);
+            }
+            if i.key_pressed(egui::Key::Escape) {
+                self.placing_square = None;
             }
         });
     }
@@ -310,7 +316,14 @@ impl Pathfinder {
         );
     }
     fn draw_status_bar(&self, painter: &egui::Painter) {
-        let status_text = format!("Mode: {}\n(change with 1, 2, 3, 4)", self.placing_square);
+        let placing_square = match self.placing_square {
+            None => "None".to_string(),
+            Some(ref square) => square.to_string() + " square",
+        };
+        let status_text = format!(
+            "Placing: {}\n\nChange with 1, 2, 3, 4; ESC to cancel",
+            placing_square
+        );
 
         painter.rect_filled(self.status_area, 0.0, egui::Color32::DARK_GRAY);
         painter.text(
