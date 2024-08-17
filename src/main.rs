@@ -14,13 +14,24 @@ fn main() -> eframe::Result<()> {
     )
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 enum SquareState {
     #[default]
     Empty,
     Blocked,
     Start,
     End,
+}
+
+impl Display for SquareState {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            SquareState::Empty => write!(f, "Add Empty"),
+            SquareState::Blocked => write!(f, "Add Blocked"),
+            SquareState::Start => write!(f, "Add Start"),
+            SquareState::End => write!(f, "Add End"),
+        }
+    }
 }
 
 const EMPTY_SQUARE_COLOR: egui::Color32 = egui::Color32::WHITE;
@@ -92,31 +103,12 @@ impl Default for WindowProps {
     }
 }
 
-#[derive(PartialEq, Eq)]
-enum GridmakerMode {
-    AddEmpty,
-    AddBlocked,
-    AddStart,
-    AddEnd,
-}
-
-impl Display for GridmakerMode {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            GridmakerMode::AddEmpty => write!(f, "Add Empty"),
-            GridmakerMode::AddBlocked => write!(f, "Add Blocked"),
-            GridmakerMode::AddStart => write!(f, "Add Start"),
-            GridmakerMode::AddEnd => write!(f, "Add End"),
-        }
-    }
-}
-
 struct Pathfinder {
     win_props: WindowProps,
     grid_area: egui::Rect,
     status_area: egui::Rect,
     selected_square: (usize, usize),
-    gm_mode: GridmakerMode,
+    placing_square: SquareState,
     start_square: Option<(usize, usize)>,
     end_square: Option<(usize, usize)>,
     grid: Grid,
@@ -149,7 +141,7 @@ impl Default for Pathfinder {
             grid_area,
             status_area,
             selected_square: (0, 0),
-            gm_mode: GridmakerMode::AddEmpty,
+            placing_square: SquareState::Empty,
             start_square: None,
             end_square: None,
             grid,
@@ -186,8 +178,8 @@ impl Pathfinder {
 
     fn update_grid(&mut self, ctx: &egui::Context) {
         let idx = self.selected_square.1 * self.grid.cols + self.selected_square.0;
-        match self.gm_mode {
-            GridmakerMode::AddEmpty | GridmakerMode::AddBlocked => {
+        match self.placing_square {
+            SquareState::Empty | SquareState::Blocked => {
                 if let Some(pos) = self.start_square {
                     if pos == self.selected_square {
                         self.start_square = None;
@@ -199,13 +191,13 @@ impl Pathfinder {
                     }
                 }
 
-                if self.gm_mode == GridmakerMode::AddEmpty {
+                if self.placing_square == SquareState::Empty {
                     self.grid.squares[idx] = SquareState::Empty;
                 } else {
                     self.grid.squares[idx] = SquareState::Blocked;
                 }
             }
-            GridmakerMode::AddStart => {
+            SquareState::Start => {
                 if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                     if let Some(pos) = self.start_square {
                         self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
@@ -214,7 +206,7 @@ impl Pathfinder {
                     self.grid.squares[idx] = SquareState::Start;
                 }
             }
-            GridmakerMode::AddEnd => {
+            SquareState::End => {
                 if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                     if let Some(pos) = self.end_square {
                         self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
@@ -229,16 +221,16 @@ impl Pathfinder {
     fn update_gm_mode(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             if i.key_pressed(egui::Key::Num1) {
-                self.gm_mode = GridmakerMode::AddEmpty;
+                self.placing_square = SquareState::Empty;
             }
             if i.key_pressed(egui::Key::Num2) {
-                self.gm_mode = GridmakerMode::AddBlocked;
+                self.placing_square = SquareState::Blocked;
             }
             if i.key_pressed(egui::Key::Num3) {
-                self.gm_mode = GridmakerMode::AddStart;
+                self.placing_square = SquareState::Start;
             }
             if i.key_pressed(egui::Key::Num4) {
-                self.gm_mode = GridmakerMode::AddEnd;
+                self.placing_square = SquareState::End;
             }
         });
     }
@@ -318,7 +310,7 @@ impl Pathfinder {
         );
     }
     fn draw_status_bar(&self, painter: &egui::Painter) {
-        let status_text = format!("Mode: {}\n(change with 1, 2, 3, 4)", self.gm_mode);
+        let status_text = format!("Mode: {}\n(change with 1, 2, 3, 4)", self.placing_square);
 
         painter.rect_filled(self.status_area, 0.0, egui::Color32::DARK_GRAY);
         painter.text(
