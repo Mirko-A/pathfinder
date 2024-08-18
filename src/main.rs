@@ -1,6 +1,6 @@
 use eframe::egui;
-use std::fmt::{self, Display, Formatter};
 
+mod egui_ui;
 mod grid;
 
 fn main() -> eframe::Result<()> {
@@ -14,17 +14,6 @@ fn main() -> eframe::Result<()> {
         native_options,
         Box::new(|cc| Box::new(app)),
     )
-}
-
-impl Display for grid::SquareState {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            grid::SquareState::Empty => write!(f, "Add Empty"),
-            grid::SquareState::Blocked => write!(f, "Add Blocked"),
-            grid::SquareState::Start => write!(f, "Add Start"),
-            grid::SquareState::End => write!(f, "Add End"),
-        }
-    }
 }
 
 const EMPTY_SQUARE_COLOR: egui::Color32 = egui::Color32::WHITE;

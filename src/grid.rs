@@ -1,3 +1,5 @@
+use std::fmt::{self, Display, Formatter};
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum SquareState {
     #[default]
@@ -5,6 +7,17 @@ pub enum SquareState {
     Blocked,
     Start,
     End,
+}
+
+impl Display for SquareState {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            SquareState::Empty => write!(f, "Add Empty"),
+            SquareState::Blocked => write!(f, "Add Blocked"),
+            SquareState::Start => write!(f, "Add Start"),
+            SquareState::End => write!(f, "Add End"),
+        }
+    }
 }
 
 #[derive(Debug)]
