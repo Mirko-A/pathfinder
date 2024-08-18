@@ -142,9 +142,8 @@ impl Pathfinder {
 
     fn update_grid(&mut self, ctx: &egui::Context) {
         let idx = self.selected_square.1 * self.grid.cols + self.selected_square.0;
-        match self.placing_square {
-            None => {}
-            Some(ref placing_square) => match placing_square {
+        if let Some(ref placing_square) = self.placing_square {
+            match placing_square {
                 grid::SquareState::Empty | grid::SquareState::Blocked => {
                     if let Some(pos) = self.start_square {
                         if pos == self.selected_square {
@@ -164,7 +163,7 @@ impl Pathfinder {
                     }
                 }
                 grid::SquareState::Start => {
-                    if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
                         if let Some(pos) = self.start_square {
                             self.grid.squares[pos.1 * self.grid.cols + pos.0] =
                                 grid::SquareState::Empty;
@@ -174,7 +173,7 @@ impl Pathfinder {
                     }
                 }
                 grid::SquareState::End => {
-                    if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    if ctx.input(|i| i.key_pressed(egui::Key::Space)) {
                         if let Some(pos) = self.end_square {
                             self.grid.squares[pos.1 * self.grid.cols + pos.0] =
                                 grid::SquareState::Empty;
@@ -183,7 +182,7 @@ impl Pathfinder {
                         self.grid.squares[idx] = grid::SquareState::End;
                     }
                 }
-            },
+            }
         }
     }
 
