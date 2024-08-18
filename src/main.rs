@@ -1,6 +1,8 @@
 use eframe::egui;
 use std::fmt::{self, Display, Formatter};
 
+mod grid;
+
 fn main() -> eframe::Result<()> {
     let app = Pathfinder::default();
     let native_options = eframe::NativeOptions {
@@ -14,22 +16,13 @@ fn main() -> eframe::Result<()> {
     )
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-enum SquareState {
-    #[default]
-    Empty,
-    Blocked,
-    Start,
-    End,
-}
-
-impl Display for SquareState {
+impl Display for grid::SquareState {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            SquareState::Empty => write!(f, "Add Empty"),
-            SquareState::Blocked => write!(f, "Add Blocked"),
-            SquareState::Start => write!(f, "Add Start"),
-            SquareState::End => write!(f, "Add End"),
+            grid::SquareState::Empty => write!(f, "Add Empty"),
+            grid::SquareState::Blocked => write!(f, "Add Blocked"),
+            grid::SquareState::Start => write!(f, "Add Start"),
+            grid::SquareState::End => write!(f, "Add End"),
         }
     }
 }
@@ -41,45 +34,14 @@ const END_SQUARE_COLOR: egui::Color32 = egui::Color32::RED;
 const SELECTED_SQUARE_COLOR: egui::Color32 = egui::Color32::DARK_BLUE;
 const GRID_LINE_COLOR: egui::Color32 = egui::Color32::BLACK;
 
-impl From<&SquareState> for egui::Color32 {
-    fn from(state: &SquareState) -> egui::Color32 {
+impl From<&grid::SquareState> for egui::Color32 {
+    fn from(state: &grid::SquareState) -> egui::Color32 {
         match state {
-            SquareState::Empty => EMPTY_SQUARE_COLOR,
-            SquareState::Blocked => BLOCKED_SQUARE_COLOR,
-            SquareState::Start => START_SQUARE_COLOR,
-            SquareState::End => END_SQUARE_COLOR,
+            grid::SquareState::Empty => EMPTY_SQUARE_COLOR,
+            grid::SquareState::Blocked => BLOCKED_SQUARE_COLOR,
+            grid::SquareState::Start => START_SQUARE_COLOR,
+            grid::SquareState::End => END_SQUARE_COLOR,
         }
-    }
-}
-
-#[derive(Debug)]
-struct Grid {
-    rows: usize,
-    cols: usize,
-    square_size: usize,
-    squares: Vec<SquareState>,
-}
-
-impl Grid {
-    fn new(rows: usize, cols: usize, square_size: usize) -> Self {
-        let squares = vec![SquareState::default(); rows * cols];
-
-        Self {
-            rows,
-            cols,
-            square_size,
-            squares,
-        }
-    }
-}
-
-const GRID_ROWS: usize = 25;
-const GRID_COLS: usize = 25;
-const SQUARE_SIZE: usize = 40;
-
-impl Grid {
-    fn default() -> Self {
-        Self::new(GRID_ROWS, GRID_COLS, SQUARE_SIZE)
     }
 }
 
@@ -90,8 +52,8 @@ struct WindowProps {
 }
 
 const APP_TITLE: &str = "Pathfinder";
-const APP_WIDTH: f32 = (GRID_COLS * SQUARE_SIZE) as f32;
-const APP_HEIGHT: f32 = (GRID_ROWS * SQUARE_SIZE) as f32;
+const APP_WIDTH: f32 = (grid::GRID_COLS * grid::SQUARE_SIZE) as f32;
+const APP_HEIGHT: f32 = (grid::GRID_ROWS * grid::SQUARE_SIZE) as f32;
 
 impl Default for WindowProps {
     fn default() -> Self {
@@ -108,17 +70,17 @@ struct Pathfinder {
     grid_area: egui::Rect,
     status_area: egui::Rect,
     selected_square: (usize, usize),
-    placing_square: Option<SquareState>,
+    placing_square: Option<grid::SquareState>,
     start_square: Option<(usize, usize)>,
     end_square: Option<(usize, usize)>,
-    grid: Grid,
+    grid: grid::Grid,
 }
 
 const STATUS_AREA_HEIGHT: f32 = 75.0;
 
 impl Default for Pathfinder {
     fn default() -> Self {
-        let grid = Grid::default();
+        let grid = grid::Grid::default();
 
         let grid_width = grid.cols as f32 * grid.square_size as f32;
         let grid_height = grid.rows as f32 * grid.square_size as f32;
@@ -181,7 +143,7 @@ impl Pathfinder {
         match self.placing_square {
             None => {}
             Some(ref placing_square) => match placing_square {
-                SquareState::Empty | SquareState::Blocked => {
+                grid::SquareState::Empty | grid::SquareState::Blocked => {
                     if let Some(pos) = self.start_square {
                         if pos == self.selected_square {
                             self.start_square = None;
@@ -193,28 +155,30 @@ impl Pathfinder {
                         }
                     }
 
-                    if *placing_square == SquareState::Empty {
-                        self.grid.squares[idx] = SquareState::Empty;
+                    if *placing_square == grid::SquareState::Empty {
+                        self.grid.squares[idx] = grid::SquareState::Empty;
                     } else {
-                        self.grid.squares[idx] = SquareState::Blocked;
+                        self.grid.squares[idx] = grid::SquareState::Blocked;
                     }
                 }
-                SquareState::Start => {
+                grid::SquareState::Start => {
                     if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                         if let Some(pos) = self.start_square {
-                            self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                            self.grid.squares[pos.1 * self.grid.cols + pos.0] =
+                                grid::SquareState::Empty;
                         }
                         self.start_square = Some(self.selected_square);
-                        self.grid.squares[idx] = SquareState::Start;
+                        self.grid.squares[idx] = grid::SquareState::Start;
                     }
                 }
-                SquareState::End => {
+                grid::SquareState::End => {
                     if ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                         if let Some(pos) = self.end_square {
-                            self.grid.squares[pos.1 * self.grid.cols + pos.0] = SquareState::Empty;
+                            self.grid.squares[pos.1 * self.grid.cols + pos.0] =
+                                grid::SquareState::Empty;
                         }
                         self.end_square = Some(self.selected_square);
-                        self.grid.squares[idx] = SquareState::End;
+                        self.grid.squares[idx] = grid::SquareState::End;
                     }
                 }
             },
@@ -224,16 +188,16 @@ impl Pathfinder {
     fn update_placing_square(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
             if i.key_pressed(egui::Key::Num1) {
-                self.placing_square = Some(SquareState::Empty);
+                self.placing_square = Some(grid::SquareState::Empty);
             }
             if i.key_pressed(egui::Key::Num2) {
-                self.placing_square = Some(SquareState::Blocked);
+                self.placing_square = Some(grid::SquareState::Blocked);
             }
             if i.key_pressed(egui::Key::Num3) {
-                self.placing_square = Some(SquareState::Start);
+                self.placing_square = Some(grid::SquareState::Start);
             }
             if i.key_pressed(egui::Key::Num4) {
-                self.placing_square = Some(SquareState::End);
+                self.placing_square = Some(grid::SquareState::End);
             }
             if i.key_pressed(egui::Key::Escape) {
                 self.placing_square = None;
