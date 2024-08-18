@@ -117,16 +117,24 @@ impl Pathfinder {
 
     fn update_selected_square(&mut self, ctx: &egui::Context) {
         ctx.input(|i| {
-            if i.key_pressed(egui::Key::ArrowLeft) && self.selected_square.0 != 0 {
+            if (i.key_pressed(egui::Key::ArrowLeft) || i.key_pressed(egui::Key::H))
+                && self.selected_square.0 != 0
+            {
                 self.selected_square.0 -= 1;
             }
-            if i.key_pressed(egui::Key::ArrowRight) && self.selected_square.0 < self.grid.cols - 1 {
+            if (i.key_pressed(egui::Key::ArrowRight) || i.key_pressed(egui::Key::L))
+                && self.selected_square.0 < self.grid.cols - 1
+            {
                 self.selected_square.0 += 1;
             }
-            if i.key_pressed(egui::Key::ArrowUp) && self.selected_square.1 != 0 {
+            if (i.key_pressed(egui::Key::ArrowUp) || i.key_pressed(egui::Key::K))
+                && self.selected_square.1 != 0
+            {
                 self.selected_square.1 -= 1;
             }
-            if i.key_pressed(egui::Key::ArrowDown) && self.selected_square.1 < self.grid.rows - 1 {
+            if (i.key_pressed(egui::Key::ArrowDown) || i.key_pressed(egui::Key::J))
+                && self.selected_square.1 < self.grid.rows - 1
+            {
                 self.selected_square.1 += 1;
             }
         });
