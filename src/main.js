@@ -31,7 +31,6 @@ let createGridButton;
 let gridContainer;
 let grid;
 
-// TODO: Implement the functionality to set start and end squares
 let startSquare = null;
 let endSquare = null;
 
@@ -93,6 +92,7 @@ function addSidebarEventListeners() {
 
   runButton.addEventListener("click", () => {});
   debugButton.addEventListener("click", () => {
+    invoke("greet", { name: "Stranger" });
     console.log(startSquare, endSquare);
   });
 }
