@@ -1,5 +1,12 @@
 const { invoke } = window.__TAURI__.tauri;
 
+const SquareColor = {
+  Empty: "white",
+  Block: "black",
+  Start: "green",
+  End: "red",
+};
+
 const GridEditorMode = {
   Empty: "Empty",
   Block: "Block",
@@ -14,6 +21,9 @@ let emptyModeButton;
 let blockModeButton;
 let startModeButton;
 let endModeButton;
+
+let runButton;
+let debugButton;
 
 let gridSizeInput;
 let squareSizeInput;
@@ -30,6 +40,9 @@ function loadElements() {
   blockModeButton = document.querySelector("#block-mode-button");
   startModeButton = document.querySelector("#start-mode-button");
   endModeButton = document.querySelector("#end-mode-button");
+
+  runButton = document.querySelector("#run-button");
+  debugButton = document.querySelector("#debug-button");
 
   gridSizeInput = document.querySelector("#grid-size-input");
   squareSizeInput = document.querySelector("#square-size-input");
@@ -77,6 +90,11 @@ function addSidebarEventListeners() {
     mode = GridEditorMode.End;
     endModeButton.style.backgroundColor = "lightblue";
   });
+
+  runButton.addEventListener("click", () => {});
+  debugButton.addEventListener("click", () => {
+    console.log(startSquare, endSquare);
+  });
 }
 
 function addGridEventListeners() {
@@ -103,18 +121,43 @@ function addGridEventListeners() {
           gridItem.addEventListener(event, () => {
             if (event == "mousemove" && !isMouseDown) return;
 
+            if (
+              startSquare &&
+              gridItem == startSquare &&
+              mode != GridEditorMode.Start
+            ) {
+              startSquare.style.backgroundColor = SquareColor.Empty;
+              startSquare = null;
+            }
+            if (
+              endSquare &&
+              gridItem == endSquare &&
+              mode != GridEditorMode.End
+            ) {
+              endSquare.style.backgroundColor = SquareColor.Empty;
+              endSquare = null;
+            }
+
             switch (mode) {
               case GridEditorMode.Empty:
-                gridItem.style.backgroundColor = "white";
+                gridItem.style.backgroundColor = SquareColor.Empty;
                 break;
               case GridEditorMode.Block:
-                gridItem.style.backgroundColor = "black";
+                gridItem.style.backgroundColor = SquareColor.Block;
                 break;
               case GridEditorMode.Start:
-                gridItem.style.backgroundColor = "green";
+                if (startSquare && gridItem != startSquare) {
+                  startSquare.style.backgroundColor = SquareColor.Empty;
+                }
+                startSquare = gridItem;
+                gridItem.style.backgroundColor = SquareColor.Start;
                 break;
               case GridEditorMode.End:
-                gridItem.style.backgroundColor = "red";
+                if (endSquare && gridItem != endSquare) {
+                  endSquare.style.backgroundColor = SquareColor.Empty;
+                }
+                endSquare = gridItem;
+                gridItem.style.backgroundColor = SquareColor.End;
                 break;
             }
           });
