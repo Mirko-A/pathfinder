@@ -117,6 +117,7 @@ function addGridEventListeners() {
         gridItem.classList.add("grid-item");
 
         const events = ["mousedown", "mousemove"];
+
         events.forEach((event) => {
           gridItem.addEventListener(event, () => {
             if (event == "mousemove" && !isMouseDown) return;
