@@ -1,13 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::collections::{HashMap, HashSet};
-
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) {
-    println!("Hello, {}! You've been greeted from Rust!", name);
-}
+use std::{
+    collections::{HashMap, HashSet},
+    isize,
+};
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct Point {
@@ -31,56 +28,125 @@ struct Block {
 
 #[derive(Debug)]
 struct Grid {
-    blocks: Vec<Vec<Block>>,
+    blocks: Vec<Block>,
     size: usize,
     start: Point,
     end: Point,
 }
-fn find_min_dist(q: &HashSet<Point>, u: &Point) -> Point {
-    let mut min_dist = usize::MAX;
-    let mut min_point = &Point { x: 0, y: 0 };
 
-    for point in q {
-        let dist = ((u.x as isize - point.x as isize).abs()
-            + (u.y as isize - point.y as isize).abs()) as usize;
-        if dist < min_dist {
-            min_dist = dist;
-            min_point = point;
-        }
+struct Dir(i8, i8);
+
+impl Dir {
+    fn left() -> Self {
+        Dir(-1, 0)
     }
-
-    *min_point
+    fn right() -> Self {
+        Dir(1, 0)
+    }
+    fn up() -> Self {
+        Dir(0, -1)
+    }
+    fn down() -> Self {
+        Dir(0, 1)
+    }
 }
 
-fn find_shortest_path(grid: &Grid) {
-    let mut dist: HashMap<Point, usize> = grid
-        .blocks
-        .iter()
-        .flatten()
-        .map(|b| (b.point, usize::MAX))
-        .collect();
-    let prev: HashMap<Point, Option<Point>> = grid
-        .blocks
-        .iter()
-        .flatten()
-        .map(|b| (b.point, None))
-        .collect();
+fn find_neighbors(grid: &Grid, me: &Point) -> [Option<Point>; 4] {
+    let left = if me.x > 0 {
+        let p = Point {
+            x: me.x - 1,
+            y: me.y,
+        };
 
-    let mut q: HashSet<Point> = grid.blocks.iter().flatten().map(|b| b.point).collect();
+        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
+            None
+        } else {
+            Some(p)
+        }
+    } else {
+        None
+    };
 
-    let mut u = grid.start;
-    let mut alt: usize;
+    let right = if me.x < grid.size - 1 {
+        let p = Point {
+            x: me.x + 1,
+            y: me.y,
+        };
 
-    while !q.is_empty() {
-        u = find_min_dist(&q, &u);
-        assert!(q.remove(&u), "`u` must be present in `q`");
+        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
+            None
+        } else {
+            Some(p)
+        }
+    } else {
+        None
+    };
 
-        // TODO:
-        // Finish dijkstra's algorithm
+    let up = if me.y > 0 {
+        let p = Point {
+            x: me.x,
+            y: me.y - 1,
+        };
+
+        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
+            None
+        } else {
+            Some(p)
+        }
+    } else {
+        None
+    };
+
+    let down = if me.y < grid.size - 1 {
+        let p = Point {
+            x: me.x,
+            y: me.y + 1,
+        };
+
+        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
+            None
+        } else {
+            Some(p)
+        }
+    } else {
+        None
+    };
+
+    [left, right, up, down]
+}
+
+fn dijkstra(grid: &Grid) {
+    let mut dist: HashMap<Point, u32> = HashMap::new();
+    let mut prev: HashMap<Point, Option<Point>> = HashMap::new();
+    let mut q: HashSet<Point> = HashSet::new();
+
+    for b in &grid.blocks {
+        dist.insert(b.point, u32::MAX);
+        prev.insert(b.point, None);
+        q.insert(b.point);
     }
 
-    println!("Finding shortest path");
-    println!("{:?}", grid);
+    dist.insert(grid.start, 0);
+
+    let mut u = grid.start;
+    assert!(q.remove(&grid.start), "node must be in the set");
+
+    while !q.is_empty() {
+        let nbors = find_neighbors(grid, &u);
+
+        for n in nbors.iter().flatten() {
+            // TODO:
+            // + 1 should be replaced with the distance between u and n
+            let alt = dist[&u] + 1;
+            if alt < dist[n] {
+                dist.insert(*n, alt);
+                prev.insert(*n, Some(u));
+            }
+        }
+
+        // u = point with minimum distance from current u
+        // remove u from q
+    }
 }
 
 #[tauri::command]
@@ -88,28 +154,26 @@ fn debug(squares: Vec<&str>, grid_size: &str) {
     let mut start: Option<Point> = None;
     let mut end: Option<Point> = None;
 
-    let mut grid: Vec<Vec<Block>> = Vec::new();
+    let mut blocks: Vec<Block> = Vec::new();
     let grid_size: usize = grid_size.parse().expect("grid size is a number");
 
     for i in 0..grid_size {
-        grid.push(Vec::new());
-
         for j in 0..grid_size {
-            let square = match squares[i * grid_size + j] {
+            let kind = match squares[i * grid_size + j] {
                 "white" => Kind::Empty,
                 "black" => Kind::Block,
                 "green" => Kind::Start,
                 "red" => Kind::End,
                 _ => panic!("invalid square type"),
             };
-            if square == Kind::Start {
+            if kind == Kind::Start {
                 start = Some(Point { x: i, y: j });
-            } else if square == Kind::End {
+            } else if kind == Kind::End {
                 end = Some(Point { x: i, y: j });
             }
-            grid[i].push(Block {
+            blocks.push(Block {
                 point: Point { x: i, y: j },
-                kind: square,
+                kind,
             });
         }
     }
@@ -120,18 +184,18 @@ fn debug(squares: Vec<&str>, grid_size: &str) {
     );
 
     let grid = Grid {
-        blocks: grid,
+        blocks,
         size: grid_size,
         start: start.unwrap(),
         end: end.unwrap(),
     };
 
-    find_shortest_path(&grid);
+    dijkstra(&grid);
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, debug])
+        .invoke_handler(tauri::generate_handler![debug])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
