@@ -31,8 +31,8 @@ let createGridButton;
 let gridContainer;
 let grid;
 
-let startSquare = null;
-let endSquare = null;
+let startSquare;
+let endSquare;
 
 function loadElements() {
   emptyModeButton = document.querySelector("#empty-mode-button");
@@ -92,13 +92,25 @@ function addSidebarEventListeners() {
 
   runButton.addEventListener("click", () => {});
   debugButton.addEventListener("click", () => {
-    invoke("greet", { name: "Stranger" });
-    console.log(startSquare, endSquare);
+    if (!startSquare || !endSquare) {
+      alert("Please select a START and END square");
+      return;
+    }
+
+    const squares = [];
+    for (let i = 0; i < grid.children.length; i++) {
+      squares.push(grid.children[i].style.backgroundColor);
+    }
+
+    invoke("debug", { squares: squares, gridSize: gridSizeInput.value });
   });
 }
 
 function addGridEventListeners() {
   createGridButton.addEventListener("click", () => {
+    startSquare = null;
+    endSquare = null;
+
     while (grid.firstChild) {
       grid.firstChild.remove();
     }
@@ -115,6 +127,7 @@ function addGridEventListeners() {
       for (let j = 0; j < gridSize; j++) {
         const gridItem = document.createElement("div");
         gridItem.classList.add("grid-item");
+        gridItem.style.backgroundColor = SquareColor.Empty;
 
         const events = ["mousedown", "mousemove"];
 
