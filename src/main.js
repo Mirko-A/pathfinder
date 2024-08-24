@@ -102,7 +102,17 @@ function addSidebarEventListeners() {
       colors.push(grid.children[i].style.backgroundColor);
     }
 
-    invoke("debug", { colors: colors, gridSize: gridSizeInput.value });
+    invoke("debug", { colors: colors, gridSize: gridSizeInput.value }).then(
+      (path) => {
+        for (const step of path) {
+          // step was tuple in rust (usize, usize), convert to index in grid
+          const idx = step[0] * gridSizeInput.value + step[1];
+          grid.children[idx].style.backgroundColor = "blue";
+          // wait for 100ms
+          new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      },
+    );
   });
 }
 
