@@ -150,7 +150,7 @@ fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
 }
 
 #[tauri::command]
-fn debug(colors: Vec<&str>, grid_size: &str) {
+fn debug(colors: Vec<&str>, grid_size: &str) -> Vec<(usize, usize)> {
     let grid = Grid::new(
         colors,
         grid_size.parse().expect("grid_size must be a number"),
@@ -158,13 +158,8 @@ fn debug(colors: Vec<&str>, grid_size: &str) {
     let path = dijkstra(&grid);
 
     match path {
-        Some(path) => {
-            let path: Vec<(usize, usize)> = path.iter().map(|&(r, c)| (r, c)).collect();
-            println!("{:?}", path);
-        }
-        None => {
-            println!("No path found");
-        }
+        Some(path) => path.iter().map(|&(r, c)| (r, c)).collect(),
+        None => vec![],
     }
 }
 
