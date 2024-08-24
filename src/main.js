@@ -97,12 +97,12 @@ function addSidebarEventListeners() {
       return;
     }
 
-    const squares = [];
+    const colors = [];
     for (let i = 0; i < grid.children.length; i++) {
-      squares.push(grid.children[i].style.backgroundColor);
+      colors.push(grid.children[i].style.backgroundColor);
     }
 
-    invoke("debug", { squares: squares, gridSize: gridSizeInput.value });
+    invoke("debug", { colors: colors, gridSize: gridSizeInput.value });
   });
 }
 

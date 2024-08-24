@@ -1,196 +1,171 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{
-    collections::{HashMap, HashSet},
-    isize,
-};
+use std::collections::BinaryHeap;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-struct Point {
-    x: usize,
-    y: usize,
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum Kind {
-    Empty,
-    Block,
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum Cell {
     Start,
     End,
+    Empty,
+    Blocked,
 }
 
-#[derive(Debug)]
-struct Block {
-    point: Point,
-    kind: Kind,
+impl Cell {
+    fn from_color(c: &str) -> Self {
+        match c {
+            "green" => Cell::Start,
+            "red" => Cell::End,
+            "black" => Cell::Blocked,
+            "white" => Cell::Empty,
+            _ => unreachable!("unrecognized color {}", c),
+        }
+    }
 }
 
-#[derive(Debug)]
+// (row, col)
+type Pos = (usize, usize);
+
 struct Grid {
-    blocks: Vec<Block>,
+    cells: Vec<Vec<Cell>>,
     size: usize,
-    start: Point,
-    end: Point,
 }
 
-struct Dir(i8, i8);
+impl Grid {
+    fn new(colors: Vec<&str>, size: usize) -> Self {
+        let cells: Vec<Vec<Cell>> = colors
+            .chunks(size)
+            .map(|row| row.iter().map(|&c| Cell::from_color(c)).collect())
+            .collect();
 
-impl Dir {
-    fn left() -> Self {
-        Dir(-1, 0)
+        Self { cells, size }
     }
-    fn right() -> Self {
-        Dir(1, 0)
-    }
-    fn up() -> Self {
-        Dir(0, -1)
-    }
-    fn down() -> Self {
-        Dir(0, 1)
-    }
-}
 
-fn find_neighbors(grid: &Grid, me: &Point) -> [Option<Point>; 4] {
-    let left = if me.x > 0 {
-        let p = Point {
-            x: me.x - 1,
-            y: me.y,
-        };
-
-        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
-            None
+    fn get(&self, pos: Pos) -> Option<Cell> {
+        if pos.0 < self.size && pos.1 < self.size {
+            Some(self.cells[pos.0][pos.1])
         } else {
-            Some(p)
-        }
-    } else {
-        None
-    };
-
-    let right = if me.x < grid.size - 1 {
-        let p = Point {
-            x: me.x + 1,
-            y: me.y,
-        };
-
-        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
             None
-        } else {
-            Some(p)
         }
-    } else {
-        None
-    };
-
-    let up = if me.y > 0 {
-        let p = Point {
-            x: me.x,
-            y: me.y - 1,
-        };
-
-        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
-            None
-        } else {
-            Some(p)
-        }
-    } else {
-        None
-    };
-
-    let down = if me.y < grid.size - 1 {
-        let p = Point {
-            x: me.x,
-            y: me.y + 1,
-        };
-
-        if grid.blocks[p.x * grid.size + p.y].kind == Kind::Block {
-            None
-        } else {
-            Some(p)
-        }
-    } else {
-        None
-    };
-
-    [left, right, up, down]
-}
-
-fn dijkstra(grid: &Grid) {
-    let mut dist: HashMap<Point, u32> = HashMap::new();
-    let mut prev: HashMap<Point, Option<Point>> = HashMap::new();
-    let mut q: HashSet<Point> = HashSet::new();
-
-    for b in &grid.blocks {
-        dist.insert(b.point, u32::MAX);
-        prev.insert(b.point, None);
-        q.insert(b.point);
     }
 
-    dist.insert(grid.start, 0);
-
-    let mut u = grid.start;
-    assert!(q.remove(&grid.start), "node must be in the set");
-
-    while !q.is_empty() {
-        let nbors = find_neighbors(grid, &u);
-
-        for n in nbors.iter().flatten() {
-            // TODO:
-            // + 1 should be replaced with the distance between u and n
-            let alt = dist[&u] + 1;
-            if alt < dist[n] {
-                dist.insert(*n, alt);
-                prev.insert(*n, Some(u));
+    fn start(&self) -> Pos {
+        for (r, row) in self.cells.iter().enumerate() {
+            for (c, cell) in row.iter().enumerate() {
+                if *cell == Cell::Start {
+                    return (r, c);
+                }
             }
         }
-
-        // u = point with minimum distance from current u
-        // remove u from q
+        unreachable!("no start cell found");
     }
+
+    fn end(&self) -> Pos {
+        for (r, row) in self.cells.iter().enumerate() {
+            for (c, cell) in row.iter().enumerate() {
+                if *cell == Cell::End {
+                    return (r, c);
+                }
+            }
+        }
+        unreachable!("no end cell found");
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct Node {
+    pos: Pos,
+    cost: usize,
+}
+
+impl PartialOrd for Node {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cost.cmp(&other.cost))
+    }
+}
+
+impl Ord for Node {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.cost.cmp(&other.cost)
+    }
+}
+
+fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
+    let start = grid.start();
+    let end = grid.end();
+
+    let mut heap: BinaryHeap<Node> = BinaryHeap::new();
+    let mut dist = vec![vec![usize::MAX; grid.size]; grid.size];
+    let mut prev: Vec<Vec<Option<Pos>>> = vec![vec![None; grid.size]; grid.size];
+
+    dist[start.0][start.1] = 0;
+    heap.push(Node {
+        pos: start,
+        cost: 0,
+    });
+
+    let directions = [(0, -1), (0, 1), (-1, 0), (1, 0)];
+
+    while let Some(Node { pos, cost }) = heap.pop() {
+        if pos == end {
+            let mut path = vec![];
+            let mut current = pos;
+
+            while let Some(prev_pos) = prev[current.0][current.1] {
+                path.push(current);
+                current = prev_pos;
+            }
+            path.push(start);
+            path.reverse();
+            return Some(path);
+        }
+
+        if cost > dist[pos.0][pos.1] {
+            continue;
+        }
+
+        'dir_loop: for (dx, dy) in directions.iter() {
+            let next_row = (pos.0 as isize + dx) as usize;
+            let next_col = (pos.1 as isize + dy) as usize;
+
+            if let Some(cell) = grid.get((next_row, next_col)) {
+                if cell == Cell::Blocked {
+                    continue 'dir_loop;
+                }
+
+                let next_cost = cost + 1;
+                if next_cost < dist[next_row][next_col] {
+                    dist[next_row][next_col] = next_cost;
+                    heap.push(Node {
+                        pos: (next_row, next_col),
+                        cost: next_cost,
+                    });
+                    prev[next_row][next_col] = Some(pos);
+                }
+            }
+        }
+    }
+
+    None
 }
 
 #[tauri::command]
-fn debug(squares: Vec<&str>, grid_size: &str) {
-    let mut start: Option<Point> = None;
-    let mut end: Option<Point> = None;
+fn debug(colors: Vec<&str>, grid_size: &str) {
+    let grid = Grid::new(
+        colors,
+        grid_size.parse().expect("grid_size must be a number"),
+    );
+    let path = dijkstra(&grid);
 
-    let mut blocks: Vec<Block> = Vec::new();
-    let grid_size: usize = grid_size.parse().expect("grid size is a number");
-
-    for i in 0..grid_size {
-        for j in 0..grid_size {
-            let kind = match squares[i * grid_size + j] {
-                "white" => Kind::Empty,
-                "black" => Kind::Block,
-                "green" => Kind::Start,
-                "red" => Kind::End,
-                _ => panic!("invalid square type"),
-            };
-            if kind == Kind::Start {
-                start = Some(Point { x: i, y: j });
-            } else if kind == Kind::End {
-                end = Some(Point { x: i, y: j });
-            }
-            blocks.push(Block {
-                point: Point { x: i, y: j },
-                kind,
-            });
+    match path {
+        Some(path) => {
+            let path: Vec<(usize, usize)> = path.iter().map(|&(r, c)| (r, c)).collect();
+            println!("{:?}", path);
+        }
+        None => {
+            println!("No path found");
         }
     }
-
-    assert!(
-        start.is_some() && end.is_some(),
-        "front-end must ensure that START and END node are selected"
-    );
-
-    let grid = Grid {
-        blocks,
-        size: grid_size,
-        start: start.unwrap(),
-        end: end.unwrap(),
-    };
-
-    dijkstra(&grid);
 }
 
 fn main() {
