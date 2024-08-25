@@ -1,6 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -94,19 +95,19 @@ fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
     let start = grid.start();
     let end = grid.end();
 
-    let mut heap: BinaryHeap<Node> = BinaryHeap::new();
+    let mut heap: BinaryHeap<Reverse<Node>> = BinaryHeap::new();
     let mut dist = vec![vec![usize::MAX; grid.size]; grid.size];
     let mut prev: Vec<Vec<Option<Pos>>> = vec![vec![None; grid.size]; grid.size];
 
     dist[start.0][start.1] = 0;
-    heap.push(Node {
+    heap.push(Reverse(Node {
         pos: start,
         cost: 0,
-    });
+    }));
 
     let directions = [(0, -1), (0, 1), (-1, 0), (1, 0)];
 
-    while let Some(Node { pos, cost }) = heap.pop() {
+    while let Some(Reverse(Node { pos, cost })) = heap.pop() {
         if pos == end {
             let mut path = vec![];
             let mut current = pos;
@@ -136,10 +137,10 @@ fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
                 let next_cost = cost + 1;
                 if next_cost < dist[next_row][next_col] {
                     dist[next_row][next_col] = next_cost;
-                    heap.push(Node {
+                    heap.push(Reverse(Node {
                         pos: (next_row, next_col),
                         cost: next_cost,
-                    });
+                    }));
                     prev[next_row][next_col] = Some(pos);
                 }
             }
