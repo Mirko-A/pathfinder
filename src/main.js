@@ -102,18 +102,27 @@ function addSidebarEventListeners() {
       colors.push(grid.children[i].style.backgroundColor);
     }
 
-    invoke("debug", { colors: colors, gridSize: gridSizeInput.value }).then(
-      (path) => {
-        for (const step of path) {
-          // step was tuple in rust (usize, usize), convert to index in grid
-          const idx = step[0] * gridSizeInput.value + step[1];
-          grid.children[idx].style.backgroundColor = "blue";
-          // wait for 100ms
-          new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      },
-    );
+    findAndDrawShortestPath(colors, gridSizeInput.value);
   });
+}
+
+function findAndDrawShortestPath(colors, gridSize) {
+  const promise = invoke("debug", {
+    colors: colors,
+    gridSize: gridSize,
+  }).then(
+    (path) => {
+      for (const step of path.slice(1, path.length - 1)) {
+        // row * gridSize + col
+        const idx = step[0] * gridSize + step[1];
+
+        grid.children[idx].style.backgroundColor = "blue";
+      }
+    },
+    (err) => {
+      console.log(err);
+    },
+  );
 }
 
 function addGridEventListeners() {
