@@ -1,10 +1,14 @@
 const { invoke } = window.__TAURI__.tauri;
 
-const SquareColor = {
-  Empty: "white",
-  Block: "black",
-  Start: "green",
-  End: "red",
+const Colors = {
+  StartSquare: "green",
+  EndSquare: "red",
+  EmptySquare: "white",
+  BlockSquare: "black",
+  PathSquare: "blue",
+
+  ButtonBackgroundInactive: "white",
+  ButtonBackgroundActive: "lightblue",
 };
 
 const GridEditorMode = {
@@ -70,24 +74,24 @@ function addSidebarEventListeners() {
   };
 
   emptyModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = "white";
+    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
     mode = GridEditorMode.Empty;
-    emptyModeButton.style.backgroundColor = "lightblue";
+    emptyModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   blockModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = "white";
+    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
     mode = GridEditorMode.Block;
-    blockModeButton.style.backgroundColor = "lightblue";
+    blockModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   startModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = "white";
+    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
     mode = GridEditorMode.Start;
-    startModeButton.style.backgroundColor = "lightblue";
+    startModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   endModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = "white";
+    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
     mode = GridEditorMode.End;
-    endModeButton.style.backgroundColor = "lightblue";
+    endModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
 
   runButton.addEventListener("click", () => {});
@@ -107,7 +111,7 @@ function addSidebarEventListeners() {
 }
 
 function findAndDrawShortestPath(colors, gridSize) {
-  const promise = invoke("debug", {
+  invoke("debug", {
     colors: colors,
     gridSize: gridSize,
   }).then(
@@ -116,7 +120,7 @@ function findAndDrawShortestPath(colors, gridSize) {
         // row * gridSize + col
         const idx = step[0] * gridSize + step[1];
 
-        grid.children[idx].style.backgroundColor = "blue";
+        grid.children[idx].style.backgroundColor = Colors.PathSquare;
       }
     },
     (err) => {
@@ -146,7 +150,7 @@ function addGridEventListeners() {
       for (let j = 0; j < gridSize; j++) {
         const gridItem = document.createElement("div");
         gridItem.classList.add("grid-item");
-        gridItem.style.backgroundColor = SquareColor.Empty;
+        gridItem.style.backgroundColor = Colors.EmptySquare;
 
         const events = ["mousedown", "mousemove"];
 
@@ -159,7 +163,7 @@ function addGridEventListeners() {
               gridItem == startSquare &&
               mode != GridEditorMode.Start
             ) {
-              startSquare.style.backgroundColor = SquareColor.Empty;
+              startSquare.style.backgroundColor = Colors.EmptySquare;
               startSquare = null;
             }
             if (
@@ -167,30 +171,30 @@ function addGridEventListeners() {
               gridItem == endSquare &&
               mode != GridEditorMode.End
             ) {
-              endSquare.style.backgroundColor = SquareColor.Empty;
+              endSquare.style.backgroundColor = Colors.EmptySquare;
               endSquare = null;
             }
 
             switch (mode) {
               case GridEditorMode.Empty:
-                gridItem.style.backgroundColor = SquareColor.Empty;
+                gridItem.style.backgroundColor = Colors.EmptySquare;
                 break;
               case GridEditorMode.Block:
-                gridItem.style.backgroundColor = SquareColor.Block;
+                gridItem.style.backgroundColor = Colors.BlockSquare;
                 break;
               case GridEditorMode.Start:
                 if (startSquare && gridItem != startSquare) {
-                  startSquare.style.backgroundColor = SquareColor.Empty;
+                  startSquare.style.backgroundColor = Colors.EmptySquare;
                 }
                 startSquare = gridItem;
-                gridItem.style.backgroundColor = SquareColor.Start;
+                gridItem.style.backgroundColor = Colors.StartSquare;
                 break;
               case GridEditorMode.End:
                 if (endSquare && gridItem != endSquare) {
-                  endSquare.style.backgroundColor = SquareColor.Empty;
+                  endSquare.style.backgroundColor = Colors.EmptySquare;
                 }
                 endSquare = gridItem;
-                gridItem.style.backgroundColor = SquareColor.End;
+                gridItem.style.backgroundColor = Colors.EndSquare;
                 break;
             }
           });
@@ -204,7 +208,7 @@ function addGridEventListeners() {
 
 function initializeElements() {
   // Assuming default mode is Empty
-  emptyModeButton.style.backgroundColor = "lightblue";
+  emptyModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   // Create default grid
   createGridButton.click();
 
