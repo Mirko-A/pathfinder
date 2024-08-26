@@ -1,24 +1,32 @@
 const { invoke } = window.__TAURI__.tauri;
 
 const Colors = {
-  StartSquare: "green",
-  EndSquare: "red",
-  EmptySquare: "white",
-  BlockSquare: "black",
-  PathSquare: "blue",
+  StartCell: "green",
+  EndCell: "red",
+  EmptyCell: "white",
+  BlockCell: "black",
+  PathCell: "blue",
 
   ButtonBackgroundInactive: "white",
   ButtonBackgroundActive: "lightblue",
 };
 
-const GridEditorMode = {
+const ApplicationState = {
+  Ready: "Editing",
+  Drawing: "Drawing",
+  Executed: "Executed",
+};
+
+const CellEditorMode = {
   Empty: "Empty",
   Block: "Block",
   Start: "Start",
   End: "End",
 };
 
-let mode = GridEditorMode.Empty;
+let appMode = ApplicationState.Ready;
+let cellEditMode = CellEditorMode.Empty;
+
 let isMouseDown = false;
 
 let emptyModeButton;
@@ -30,13 +38,27 @@ let runButton;
 let debugButton;
 
 let gridSizeInput;
-let squareSizeInput;
+let cellSizeInput;
 let createGridButton;
+let clearGridButton;
 let gridContainer;
 let grid;
 
-let startSquare;
-let endSquare;
+let startCell;
+let endCell;
+
+window.addEventListener("DOMContentLoaded", () => {
+  loadElements();
+  addEventListeners();
+  initializeElements();
+});
+
+window.addEventListener("mousedown", () => {
+  if (appMode === ApplicationState.Executed) {
+    clearPathCells();
+    appMode = ApplicationState.Ready;
+  }
+});
 
 function loadElements() {
   emptyModeButton = document.querySelector("#empty-mode-button");
@@ -48,8 +70,9 @@ function loadElements() {
   debugButton = document.querySelector("#debug-button");
 
   gridSizeInput = document.querySelector("#grid-size-input");
-  squareSizeInput = document.querySelector("#square-size-input");
+  cellSizeInput = document.querySelector("#cell-size-input");
   createGridButton = document.querySelector("#create-grid-button");
+  clearGridButton = document.querySelector("#clear-grid-button");
   gridContainer = document.getElementById("grid-container");
   grid = document.getElementById("grid");
 }
@@ -62,42 +85,50 @@ function addEventListeners() {
 function addSidebarEventListeners() {
   const modeToButton = (mode) => {
     switch (mode) {
-      case GridEditorMode.Empty:
+      case CellEditorMode.Empty:
         return emptyModeButton;
-      case GridEditorMode.Block:
+      case CellEditorMode.Block:
         return blockModeButton;
-      case GridEditorMode.Start:
+      case CellEditorMode.Start:
         return startModeButton;
-      case GridEditorMode.End:
+      case CellEditorMode.End:
         return endModeButton;
     }
   };
 
   emptyModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
-    mode = GridEditorMode.Empty;
+    modeToButton(cellEditMode).style.backgroundColor =
+      Colors.ButtonBackgroundInactive;
+    cellEditMode = CellEditorMode.Empty;
     emptyModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   blockModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
-    mode = GridEditorMode.Block;
+    modeToButton(cellEditMode).style.backgroundColor =
+      Colors.ButtonBackgroundInactive;
+    cellEditMode = CellEditorMode.Block;
     blockModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   startModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
-    mode = GridEditorMode.Start;
+    modeToButton(cellEditMode).style.backgroundColor =
+      Colors.ButtonBackgroundInactive;
+    cellEditMode = CellEditorMode.Start;
     startModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
   endModeButton.addEventListener("click", () => {
-    modeToButton(mode).style.backgroundColor = Colors.ButtonBackgroundInactive;
-    mode = GridEditorMode.End;
+    modeToButton(cellEditMode).style.backgroundColor =
+      Colors.ButtonBackgroundInactive;
+    cellEditMode = CellEditorMode.End;
     endModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
 
   runButton.addEventListener("click", () => {});
   debugButton.addEventListener("click", () => {
-    if (!startSquare || !endSquare) {
-      alert("Please select a START and END square");
+    if (appMode != ApplicationState.Ready) {
+      return;
+    }
+
+    if (!startCell || !endCell) {
+      alert("Please select a START and END cell");
       return;
     }
 
@@ -106,6 +137,7 @@ function addSidebarEventListeners() {
       colors.push(grid.children[i].style.backgroundColor);
     }
 
+    appMode = ApplicationState.Drawing;
     findAndDrawShortestPath(colors, gridSizeInput.value);
   });
 }
@@ -116,94 +148,106 @@ function findAndDrawShortestPath(colors, gridSize) {
     gridSize: gridSize,
   }).then(
     (path) => {
+      if (path.length === 0) {
+        alert("END is not reachable from START");
+      }
       for (const step of path.slice(1, path.length - 1)) {
         // row * gridSize + col
         const idx = step[0] * gridSize + step[1];
 
-        grid.children[idx].style.backgroundColor = Colors.PathSquare;
+        grid.children[idx].style.backgroundColor = Colors.PathCell;
       }
+
+      appMode = ApplicationState.Executed;
     },
     (err) => {
-      console.log(err);
+      alert(err);
     },
   );
 }
 
 function addGridEventListeners() {
-  createGridButton.addEventListener("click", () => {
-    startSquare = null;
-    endSquare = null;
-
-    while (grid.firstChild) {
-      grid.firstChild.remove();
-    }
-
-    const gridSize = gridSizeInput.value;
-    const squareSize = squareSizeInput.value;
-
-    grid.style.width = `${gridSize * squareSize}px`;
-    grid.style.height = `${gridSize * squareSize}px`;
-    grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-    grid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
-
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        const gridItem = document.createElement("div");
-        gridItem.classList.add("grid-item");
-        gridItem.style.backgroundColor = Colors.EmptySquare;
-
-        const events = ["mousedown", "mousemove"];
-
-        events.forEach((event) => {
-          gridItem.addEventListener(event, () => {
-            if (event == "mousemove" && !isMouseDown) return;
-
-            if (
-              startSquare &&
-              gridItem == startSquare &&
-              mode != GridEditorMode.Start
-            ) {
-              startSquare.style.backgroundColor = Colors.EmptySquare;
-              startSquare = null;
-            }
-            if (
-              endSquare &&
-              gridItem == endSquare &&
-              mode != GridEditorMode.End
-            ) {
-              endSquare.style.backgroundColor = Colors.EmptySquare;
-              endSquare = null;
-            }
-
-            switch (mode) {
-              case GridEditorMode.Empty:
-                gridItem.style.backgroundColor = Colors.EmptySquare;
-                break;
-              case GridEditorMode.Block:
-                gridItem.style.backgroundColor = Colors.BlockSquare;
-                break;
-              case GridEditorMode.Start:
-                if (startSquare && gridItem != startSquare) {
-                  startSquare.style.backgroundColor = Colors.EmptySquare;
-                }
-                startSquare = gridItem;
-                gridItem.style.backgroundColor = Colors.StartSquare;
-                break;
-              case GridEditorMode.End:
-                if (endSquare && gridItem != endSquare) {
-                  endSquare.style.backgroundColor = Colors.EmptySquare;
-                }
-                endSquare = gridItem;
-                gridItem.style.backgroundColor = Colors.EndSquare;
-                break;
-            }
-          });
-        });
-
-        grid.appendChild(gridItem);
-      }
-    }
+  createGridButton.addEventListener("click", createGrid);
+  clearGridButton.addEventListener("click", () => {
+    clearGrid();
+    startCell = null;
+    endCell = null;
   });
+}
+
+function createGrid() {
+  startCell = null;
+  endCell = null;
+
+  while (grid.firstChild) {
+    grid.firstChild.remove();
+  }
+
+  const gridSize = gridSizeInput.value;
+  const cellSize = cellSizeInput.value;
+
+  grid.style.width = `${gridSize * cellSize}px`;
+  grid.style.height = `${gridSize * cellSize}px`;
+  grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      const gridItem = document.createElement("div");
+      gridItem.classList.add("grid-item");
+      gridItem.style.backgroundColor = Colors.EmptyCell;
+
+      const events = ["mousedown", "mousemove"];
+
+      events.forEach((event) => {
+        gridItem.addEventListener(event, () => {
+          if (event === "mousemove" && !isMouseDown) return;
+
+          if (
+            startCell &&
+            gridItem === startCell &&
+            cellEditMode != CellEditorMode.Start
+          ) {
+            startCell.style.backgroundColor = Colors.EmptyCell;
+            startCell = null;
+          }
+          if (
+            endCell &&
+            gridItem === endCell &&
+            cellEditMode != CellEditorMode.End
+          ) {
+            endCell.style.backgroundColor = Colors.EmptyCell;
+            endCell = null;
+          }
+
+          switch (cellEditMode) {
+            case CellEditorMode.Empty:
+              gridItem.style.backgroundColor = Colors.EmptyCell;
+              break;
+            case CellEditorMode.Block:
+              gridItem.style.backgroundColor = Colors.BlockCell;
+              break;
+            case CellEditorMode.Start:
+              if (startCell && gridItem != startCell) {
+                startCell.style.backgroundColor = Colors.EmptyCell;
+              }
+              startCell = gridItem;
+              gridItem.style.backgroundColor = Colors.StartCell;
+              break;
+            case CellEditorMode.End:
+              if (endCell && gridItem != endCell) {
+                endCell.style.backgroundColor = Colors.EmptyCell;
+              }
+              endCell = gridItem;
+              gridItem.style.backgroundColor = Colors.EndCell;
+              break;
+          }
+        });
+      });
+
+      grid.appendChild(gridItem);
+    }
+  }
 }
 
 function initializeElements() {
@@ -220,8 +264,16 @@ function initializeElements() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  loadElements();
-  addEventListeners();
-  initializeElements();
-});
+function clearGrid() {
+  for (const cell of grid.children) {
+    cell.style.backgroundColor = Colors.EmptyCell;
+  }
+}
+
+function clearPathCells() {
+  for (const cell of grid.children) {
+    if (cell.style.backgroundColor === Colors.PathCell) {
+      cell.style.backgroundColor = Colors.EmptyCell;
+    }
+  }
+}
