@@ -35,7 +35,6 @@ let startModeButton;
 let endModeButton;
 
 let runButton;
-let debugButton;
 
 let gridSizeInput;
 let cellSizeInput;
@@ -67,7 +66,6 @@ function loadElements() {
   endModeButton = document.querySelector("#end-mode-button");
 
   runButton = document.querySelector("#run-button");
-  debugButton = document.querySelector("#debug-button");
 
   gridSizeInput = document.querySelector("#grid-size-input");
   cellSizeInput = document.querySelector("#cell-size-input");
@@ -121,8 +119,7 @@ function addSidebarEventListeners() {
     endModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
   });
 
-  runButton.addEventListener("click", () => {});
-  debugButton.addEventListener("click", () => {
+  runButton.addEventListener("click", () => {
     if (appState != ApplicationState.Ready) {
       return;
     }
@@ -145,7 +142,7 @@ function addSidebarEventListeners() {
 }
 
 async function findAndDrawShortestPath(colors, gridSize) {
-  const path = await invoke("debug", {
+  const path = await invoke("run_pathfinding", {
     colors: colors,
     gridSize: gridSize,
   });

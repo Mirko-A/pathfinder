@@ -4,7 +4,7 @@
 mod algorithms;
 
 #[tauri::command]
-fn debug(colors: Vec<&str>, grid_size: &str) -> Vec<(usize, usize)> {
+fn run_pathfinding(colors: Vec<&str>, grid_size: &str) -> Vec<(usize, usize)> {
     let grid = algorithms::Grid::new(
         colors,
         grid_size.parse().expect("grid_size must be a number"),
@@ -20,7 +20,7 @@ fn debug(colors: Vec<&str>, grid_size: &str) -> Vec<(usize, usize)> {
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![debug])
+        .invoke_handler(tauri::generate_handler![run_pathfinding])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
