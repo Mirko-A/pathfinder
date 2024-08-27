@@ -138,32 +138,28 @@ function addSidebarEventListeners() {
     }
 
     appMode = ApplicationState.Drawing;
-    findAndDrawShortestPath(colors, gridSizeInput.value);
+    findAndDrawShortestPath(colors, gridSizeInput.value).then(() => {
+      appMode = ApplicationState.Executed;
+    });
   });
 }
 
-function findAndDrawShortestPath(colors, gridSize) {
-  invoke("debug", {
+async function findAndDrawShortestPath(colors, gridSize) {
+  const path = await invoke("debug", {
     colors: colors,
     gridSize: gridSize,
-  }).then(
-    (path) => {
-      if (path.length === 0) {
-        alert("END is not reachable from START");
-      }
-      for (const step of path.slice(1, path.length - 1)) {
-        // row * gridSize + col
-        const idx = step[0] * gridSize + step[1];
+  });
 
-        grid.children[idx].style.backgroundColor = Colors.PathCell;
-      }
+  if (path.length === 0) {
+    alert("END is not reachable from START");
+  }
 
-      appMode = ApplicationState.Executed;
-    },
-    (err) => {
-      alert(err);
-    },
-  );
+  for (const step of path.slice(1, path.length - 1)) {
+    // row * gridSize + col
+    const idx = step[0] * gridSize + step[1];
+
+    grid.children[idx].style.backgroundColor = Colors.PathCell;
+  }
 }
 
 function addGridEventListeners() {
