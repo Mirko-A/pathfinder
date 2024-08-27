@@ -12,7 +12,7 @@ const Colors = {
 };
 
 const ApplicationState = {
-  Ready: "Editing",
+  Ready: "Ready",
   Drawing: "Drawing",
   Executed: "Executed",
 };
@@ -24,7 +24,7 @@ const CellEditorMode = {
   End: "End",
 };
 
-let appMode = ApplicationState.Ready;
+let appState = ApplicationState.Ready;
 let cellEditMode = CellEditorMode.Empty;
 
 let isMouseDown = false;
@@ -54,9 +54,9 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("mousedown", () => {
-  if (appMode === ApplicationState.Executed) {
+  if (appState === ApplicationState.Executed) {
     clearPathCells();
-    appMode = ApplicationState.Ready;
+    appState = ApplicationState.Ready;
   }
 });
 
@@ -123,7 +123,7 @@ function addSidebarEventListeners() {
 
   runButton.addEventListener("click", () => {});
   debugButton.addEventListener("click", () => {
-    if (appMode != ApplicationState.Ready) {
+    if (appState != ApplicationState.Ready) {
       return;
     }
 
@@ -137,9 +137,9 @@ function addSidebarEventListeners() {
       colors.push(grid.children[i].style.backgroundColor);
     }
 
-    appMode = ApplicationState.Drawing;
+    appState = ApplicationState.Drawing;
     findAndDrawShortestPath(colors, gridSizeInput.value).then(() => {
-      appMode = ApplicationState.Executed;
+      appState = ApplicationState.Executed;
     });
   });
 }
