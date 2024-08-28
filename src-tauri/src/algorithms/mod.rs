@@ -25,17 +25,19 @@ type Pos = (usize, usize);
 
 pub struct Grid {
     cells: Vec<Vec<Cell>>,
+    costs: Vec<Vec<u8>>,
     size: usize,
 }
 
 impl Grid {
-    pub fn new(colors: Vec<&str>, size: usize) -> Self {
+    pub fn new(colors: Vec<&str>, costs: Vec<u8>, size: usize) -> Self {
         let cells: Vec<Vec<Cell>> = colors
             .chunks(size)
             .map(|row| row.iter().map(|&c| Cell::from_color(c)).collect())
             .collect();
+        let costs = costs.chunks(size).map(|row| row.to_vec()).collect();
 
-        Self { cells, size }
+        Self { cells, costs, size }
     }
 
     fn get(&self, pos: Pos) -> Option<Cell> {

@@ -4,9 +4,10 @@
 mod algorithms;
 
 #[tauri::command]
-fn run_pathfinding(colors: Vec<&str>, grid_size: &str) -> Vec<(usize, usize)> {
+fn run_pathfinding(colors: Vec<&str>, costs: Vec<u8>, grid_size: &str) -> Vec<(usize, usize)> {
     let grid = algorithms::Grid::new(
         colors,
+        costs,
         grid_size.parse().expect("grid_size must be a number"),
     );
 

@@ -46,7 +46,9 @@ pub fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
                     continue 'dir_loop;
                 }
 
-                let next_cost = cost + 1;
+                // TODO:
+                // Improve the way costs are stored
+                let next_cost = cost + grid.costs[next_row][next_col] as usize;
                 if next_cost < dist[next_row][next_col] {
                     dist[next_row][next_col] = next_cost;
                     heap.push(Reverse(Node {

@@ -130,20 +130,23 @@ function addSidebarEventListeners() {
     }
 
     const colors = [];
+    const costs = [];
     for (let i = 0; i < grid.children.length; i++) {
       colors.push(grid.children[i].style.backgroundColor);
+      costs.push(parseInt(grid.children[i].textContent));
     }
 
     appState = ApplicationState.Drawing;
-    findAndDrawShortestPath(colors, gridSizeInput.value).then(() => {
+    findAndDrawShortestPath(colors, costs, gridSizeInput.value).then(() => {
       appState = ApplicationState.Executed;
     });
   });
 }
 
-async function findAndDrawShortestPath(colors, gridSize) {
+async function findAndDrawShortestPath(colors, costs, gridSize) {
   const path = await invoke("run_pathfinding", {
     colors: colors,
+    costs: costs,
     gridSize: gridSize,
   });
 
@@ -187,6 +190,8 @@ function createGrid() {
   for (let i = 0; i < gridSize; i++) {
     for (let j = 0; j < gridSize; j++) {
       const gridItem = document.createElement("div");
+      const cost = Math.floor(Math.random() * 10) + 1;
+      gridItem.textContent = cost;
       gridItem.classList.add("grid-item");
       gridItem.style.backgroundColor = Colors.EmptyCell;
 
