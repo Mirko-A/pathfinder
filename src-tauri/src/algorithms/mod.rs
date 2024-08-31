@@ -1,22 +1,30 @@
 pub mod dijkstra;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-enum Cell {
+enum CellType {
     Start,
     End,
     Empty,
     Blocked,
 }
 
+#[derive(Clone, Copy)]
+struct Cell {
+    typ: CellType,
+    cost: usize,
+}
+
 impl Cell {
-    fn from_color(c: &str) -> Self {
-        match c {
-            "green" => Cell::Start,
-            "red" => Cell::End,
-            "black" => Cell::Blocked,
-            "white" => Cell::Empty,
-            _ => unreachable!("unrecognized color {}", c),
-        }
+    fn new(color: &str, cost: usize) -> Self {
+        let typ = match color {
+            "green" => CellType::Start,
+            "red" => CellType::End,
+            "black" => CellType::Blocked,
+            "white" => CellType::Empty,
+            _ => unreachable!("unrecognized color {}", color),
+        };
+
+        Self { typ, cost }
     }
 }
 
@@ -25,19 +33,22 @@ type Pos = (usize, usize);
 
 pub struct Grid {
     cells: Vec<Vec<Cell>>,
-    costs: Vec<Vec<u8>>,
     size: usize,
 }
 
 impl Grid {
-    pub fn new(colors: Vec<&str>, costs: Vec<u8>, size: usize) -> Self {
-        let cells: Vec<Vec<Cell>> = colors
+    pub fn new(colors: Vec<&str>, costs: Vec<usize>, size: usize) -> Self {
+        let cells: Vec<_> = colors.iter().zip(costs).collect();
+        let cells: Vec<Vec<Cell>> = cells
             .chunks(size)
-            .map(|row| row.iter().map(|&c| Cell::from_color(c)).collect())
+            .map(|row| {
+                row.iter()
+                    .map(|&(color, cost)| Cell::new(color, cost))
+                    .collect()
+            })
             .collect();
-        let costs = costs.chunks(size).map(|row| row.to_vec()).collect();
 
-        Self { cells, costs, size }
+        Self { cells, size }
     }
 
     fn get(&self, pos: Pos) -> Option<Cell> {
@@ -51,7 +62,7 @@ impl Grid {
     fn start(&self) -> Pos {
         for (r, row) in self.cells.iter().enumerate() {
             for (c, cell) in row.iter().enumerate() {
-                if *cell == Cell::Start {
+                if cell.typ == CellType::Start {
                     return (r, c);
                 }
             }
@@ -62,7 +73,7 @@ impl Grid {
     fn end(&self) -> Pos {
         for (r, row) in self.cells.iter().enumerate() {
             for (c, cell) in row.iter().enumerate() {
-                if *cell == Cell::End {
+                if cell.typ == CellType::End {
                     return (r, c);
                 }
             }

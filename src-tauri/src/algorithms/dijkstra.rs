@@ -1,7 +1,7 @@
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-use crate::algorithms::{Cell, Grid, Node, Pos};
+use crate::algorithms::{CellType, Grid, Node, Pos};
 
 pub fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
     let start = grid.start();
@@ -42,13 +42,11 @@ pub fn dijkstra(grid: &Grid) -> Option<Vec<Pos>> {
             let next_col = (pos.1 as isize + dy) as usize;
 
             if let Some(cell) = grid.get((next_row, next_col)) {
-                if cell == Cell::Blocked {
+                if cell.typ == CellType::Blocked {
                     continue 'dir_loop;
                 }
 
-                // TODO:
-                // Improve the way costs are stored
-                let next_cost = cost + grid.costs[next_row][next_col] as usize;
+                let next_cost = cost + cell.cost;
                 if next_cost < dist[next_row][next_col] {
                     dist[next_row][next_col] = next_cost;
                     heap.push(Reverse(Node {

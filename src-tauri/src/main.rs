@@ -6,7 +6,7 @@ mod algorithms;
 // TODO:
 // Improve the way costs are kept track of
 #[tauri::command]
-fn run_pathfinding(colors: Vec<&str>, costs: Vec<u8>, grid_size: &str) -> Vec<(usize, usize)> {
+fn run_pathfinding(colors: Vec<&str>, costs: Vec<usize>, grid_size: &str) -> Vec<(usize, usize)> {
     let grid = algorithms::Grid::new(
         colors,
         costs,
