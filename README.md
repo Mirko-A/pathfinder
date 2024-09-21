@@ -1,7 +1,23 @@
-# Tauri + Vanilla
+# Pathfinder
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Javascript.
+Pathfinding algorithm visualizer built with Tauri. Supported algorithms are:
+- Dijkstra
+- A* (unimplemented)
+- BFS (unimplemented)
+- DFS (unimplemented)
+- Floyd-Warshall (unimplemented)
+- Bellman-Ford (unimplemented)
 
-## Recommended IDE Setup
+## Getting started
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+### Development
+Run the following commands:
+```console
+npm install
+npm run tauri dev
+```
+
+Tauri dependencies might be needed, please refer to [this](https://tauri.app/v1/guides/getting-started/prerequisites/) article.
+
+### Usage
+Simply run bin/pathfinder.exe
