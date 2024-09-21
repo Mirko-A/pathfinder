@@ -29,10 +29,7 @@ let cellEditMode = CellEditorMode.Empty;
 
 let isMouseDown = false;
 
-let emptyModeButton;
-let blockModeButton;
-let startModeButton;
-let endModeButton;
+let editorModeInput;
 
 let runButton;
 
@@ -60,10 +57,7 @@ window.addEventListener("mousedown", () => {
 });
 
 function loadElements() {
-  emptyModeButton = document.querySelector("#empty-mode-button");
-  blockModeButton = document.querySelector("#block-mode-button");
-  startModeButton = document.querySelector("#start-mode-button");
-  endModeButton = document.querySelector("#end-mode-button");
+  editorModeInput = document.querySelector("#editor-mode");
 
   runButton = document.querySelector("#run-button");
 
@@ -76,47 +70,26 @@ function loadElements() {
 }
 
 function addEventListeners() {
-  addSidebarEventListeners();
+  addControlEventListeners();
   addGridEventListeners();
 }
 
-function addSidebarEventListeners() {
-  const modeToButton = (mode) => {
+function addControlEventListeners() {
+  const modeStrToEnum = (mode) => {
     switch (mode) {
-      case CellEditorMode.Empty:
-        return emptyModeButton;
-      case CellEditorMode.Block:
-        return blockModeButton;
-      case CellEditorMode.Start:
-        return startModeButton;
-      case CellEditorMode.End:
-        return endModeButton;
+      case CellEditorMode[CellEditorMode.Empty]:
+        return CellEditorMode.Empty;
+      case CellEditorMode[CellEditorMode.Block]:
+        return CellEditorMode.Block;
+      case CellEditorMode[CellEditorMode.Start]:
+        return CellEditorMode.Start;
+      case CellEditorMode[CellEditorMode.End]:
+        return CellEditorMode.End;
     }
   };
 
-  emptyModeButton.addEventListener("click", () => {
-    modeToButton(cellEditMode).style.backgroundColor =
-      Colors.ButtonBackgroundInactive;
-    cellEditMode = CellEditorMode.Empty;
-    emptyModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
-  });
-  blockModeButton.addEventListener("click", () => {
-    modeToButton(cellEditMode).style.backgroundColor =
-      Colors.ButtonBackgroundInactive;
-    cellEditMode = CellEditorMode.Block;
-    blockModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
-  });
-  startModeButton.addEventListener("click", () => {
-    modeToButton(cellEditMode).style.backgroundColor =
-      Colors.ButtonBackgroundInactive;
-    cellEditMode = CellEditorMode.Start;
-    startModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
-  });
-  endModeButton.addEventListener("click", () => {
-    modeToButton(cellEditMode).style.backgroundColor =
-      Colors.ButtonBackgroundInactive;
-    cellEditMode = CellEditorMode.End;
-    endModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
+  editorModeInput.addEventListener("change", () => {
+    cellEditMode = modeStrToEnum(editorModeInput.value);
   });
 
   runButton.addEventListener("click", () => {
@@ -201,6 +174,7 @@ function createGrid() {
         gridItem.addEventListener(event, () => {
           if (event === "mousemove" && !isMouseDown) return;
 
+          console.log(`${cellEditMode}`);
           if (
             startCell &&
             gridItem === startCell &&
@@ -249,8 +223,8 @@ function createGrid() {
 }
 
 function initializeElements() {
-  // Assuming default mode is Empty
-  emptyModeButton.style.backgroundColor = Colors.ButtonBackgroundActive;
+  cellEditMode = editorModeInput.value;
+
   // Create default grid
   createGridButton.click();
 

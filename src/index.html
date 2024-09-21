@@ -10,36 +10,46 @@
 
   <body>
     <div class="container">
-      <div class="sidebar">
-        <button class="button" id="empty-mode-button">Empty</button>
-        <button class="button" id="block-mode-button">Block</button>
-        <button class="button" id="start-mode-button">Start</button>
-        <button class="button" id="end-mode-button">End</button>
-        <button class="button" id="run-button">Run</button>
-      </div>
       <div class="grid-and-controls-container">
         <div class="grid-container" id="grid-container">
           <div id="grid"></div>
         </div>
-        <div class="controls">
-          <label for="grid-size-input">Grid Size</label>
-          <input
-            type="number"
-            id="grid-size-input"
-            min="10"
-            max="40"
-            value="20"
-          />
-          <label for="cell-size-input">Cell size (px)</label>
-          <input
-            type="number"
-            id="cell-size-input"
-            min="30"
-            max="60"
-            value="40"
-          />
-          <button class="button" id="create-grid-button">Create Grid</button>
-          <button class="button" id="clear-grid-button">Clear Grid</button>
+
+        <div class="controls-container">
+          <div class="controls">
+            <div class="left-controls">
+              <select name="editor-mode" id="editor-mode">
+                <option value="Empty">Empty</option>
+                <option value="Block">Block</option>
+                <option value="Start">Start</option>
+                <option value="End">End</option>
+              </select>
+              <button class="button" id="run-button">Run</button>
+            </div>
+
+            <div class="right-controls">
+              <label for="grid-size-input">Grid size</label>
+              <input
+                type="number"
+                id="grid-size-input"
+                min="10"
+                max="40"
+                value="20"
+              />
+              <label for="cell-size-input">Cell size (px)</label>
+              <input
+                type="number"
+                id="cell-size-input"
+                min="30"
+                max="60"
+                value="40"
+              />
+              <button class="button" id="create-grid-button">
+                Create Grid
+              </button>
+              <button class="button" id="clear-grid-button">Clear Grid</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
