@@ -29,7 +29,8 @@ let cellEditMode = CellEditorMode.Empty;
 
 let isMouseDown = false;
 
-let editorModeInput;
+let editorModeSelect;
+let algorithmSelect;
 
 let runButton;
 
@@ -57,7 +58,8 @@ window.addEventListener("mousedown", () => {
 });
 
 function loadElements() {
-  editorModeInput = document.querySelector("#editor-mode");
+  editorModeSelect = document.querySelector("#editor-mode");
+  algorithmSelect = document.querySelector("#algorithm-select");
 
   runButton = document.querySelector("#run-button");
 
@@ -88,8 +90,8 @@ function addControlEventListeners() {
     }
   };
 
-  editorModeInput.addEventListener("change", () => {
-    cellEditMode = modeStrToEnum(editorModeInput.value);
+  editorModeSelect.addEventListener("change", () => {
+    cellEditMode = modeStrToEnum(editorModeSelect.value);
   });
 
   runButton.addEventListener("click", () => {
@@ -109,18 +111,22 @@ function addControlEventListeners() {
       costs.push(parseInt(grid.children[i].textContent));
     }
 
+    const algorithm = algorithmSelect.value;
+    const gridSize = gridSizeInput.value;
+
     appState = ApplicationState.Drawing;
-    findAndDrawShortestPath(colors, costs, gridSizeInput.value).then(() => {
+    findAndDrawShortestPath(colors, costs, gridSize, algorithm).then(() => {
       appState = ApplicationState.Executed;
     });
   });
 }
 
-async function findAndDrawShortestPath(colors, costs, gridSize) {
+async function findAndDrawShortestPath(colors, costs, gridSize, algorithm) {
   const path = await invoke("run_pathfinding", {
     colors: colors,
     costs: costs,
     gridSize: gridSize,
+    algorithm: algorithm,
   });
 
   if (path.length === 0) {
@@ -174,7 +180,6 @@ function createGrid() {
         gridItem.addEventListener(event, () => {
           if (event === "mousemove" && !isMouseDown) return;
 
-          console.log(`${cellEditMode}`);
           if (
             startCell &&
             gridItem === startCell &&
@@ -223,7 +228,7 @@ function createGrid() {
 }
 
 function initializeElements() {
-  cellEditMode = editorModeInput.value;
+  cellEditMode = editorModeSelect.value;
 
   // Create default grid
   createGridButton.click();

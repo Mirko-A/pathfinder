@@ -18,11 +18,19 @@
         <div class="controls-container">
           <div class="controls">
             <div class="left-controls">
+              <label for="editor-mode">Cell</label>
               <select name="editor-mode" id="editor-mode">
                 <option value="Empty">Empty</option>
                 <option value="Block">Block</option>
                 <option value="Start">Start</option>
                 <option value="End">End</option>
+              </select>
+              <label for="algorithm-select">Algorithm</label>
+              <select name="algorithm-select" id="algorithm-select">
+                <option value="dijkstra">Dijkstra</option>
+                <option value="a-star">A*</option>
+                <option value="bfs">BFS</option>
+                <option value="dfs">DFS</option>
               </select>
               <button class="button" id="run-button">Run</button>
             </div>
