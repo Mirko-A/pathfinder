@@ -77,21 +77,8 @@ function addEventListeners() {
 }
 
 function addControlEventListeners() {
-  const modeStrToEnum = (mode) => {
-    switch (mode) {
-      case CellEditorMode[CellEditorMode.Empty]:
-        return CellEditorMode.Empty;
-      case CellEditorMode[CellEditorMode.Block]:
-        return CellEditorMode.Block;
-      case CellEditorMode[CellEditorMode.Start]:
-        return CellEditorMode.Start;
-      case CellEditorMode[CellEditorMode.End]:
-        return CellEditorMode.End;
-    }
-  };
-
   editorModeSelect.addEventListener("change", () => {
-    cellEditMode = modeStrToEnum(editorModeSelect.value);
+    cellEditMode = CellEditorMode[editorModeSelect.value];
   });
 
   runButton.addEventListener("click", () => {
